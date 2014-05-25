@@ -1,6 +1,7 @@
 import urllib2
 import fileinput
 import re
+import json
 from lxml import etree
 
 #this corresponds to the main site we are scraping data off of.
@@ -35,7 +36,8 @@ def construct_associated(monster_num):
             for elem in party.iter():
                 if 'href' in elem.attrib:
                     image = elem.find("img")
-                    print image.attrib['title']
+                    if (image != None):
+                        print image.attrib['title']
             print '========================'
 
 """
@@ -76,9 +78,9 @@ def construct_grand_party_dict():
             request =  domain + 'en/' + durl.attrib["href"]
             response = urllib2.urlopen(request)
             root_in = etree.parse(response, etree.HTMLParser())
-            parties = root_in.findall("//td[@class=\"pt\"]/")
+            parties = root_in.findall("//td[@class=\"pt\"]")
             grand_parties[durl.text] = parties
-        parties = root.findall("//td[@class=\"pt\"]/")
+        parties = root.findall("//td[@class=\"pt\"]")
         grand_parties[url.text] = parties
 
 if __name__ == "__main__":
