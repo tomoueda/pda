@@ -1,5 +1,10 @@
 pda
 ===
+progress:
+Right now experimenting with python to see how much data I could gather, everything is printed
+on the console.
+
+The idea:
 I realized that a lot of Puzzle and Dragons information/data websites only focus on the monsters individually. 
 That's great and all, but the real fun of puzzle and dragons is figuring out what team to build and what
 monsters work in synergy with other monsters.

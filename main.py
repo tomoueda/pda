@@ -22,6 +22,10 @@ def main():
         monster_num = int(line)
         find_associations(dungeon_urls, monster_num)
 
+"""
+Given a list of dungeon urls and a monster number
+we could find all the parties this monster is in.
+"""
 def find_associations(dungeon_urls, monster_num):
     for url in dungeon_urls:
         str_url = domain + url.attrib["href"]
@@ -37,6 +41,11 @@ def find_associations(dungeon_urls, monster_num):
             # grand_parties[durl.text] = parties
             print_associations(root_in, durl, monster_num)
 
+"""
+Given a root html, the url and the monster number
+we print out all parties associated with current dungeon
+that has the monster in question.
+"""
 def print_associations(root, url, monster_num):
     parties = root.findall("//td[@class=\"pt\"]")
     grand_parties[url.text] = parties
@@ -52,24 +61,6 @@ def print_associations(root, url, monster_num):
                         print image.attrib['title']
             print '======================'
 
-
-"""
-This function creates dictionary where the key
-is the dungeon and party are parties with only the associated monsters.
-"""
-def construct_associated(monster_num):
-    for dungeon, parties in grand_parties.items():
-        print dungeon
-        asso_parties = get_assoc(monster_num, parties)
-        associated_parties[dungeon] = asso_parties
-        print '======================================='
-        for party in asso_parties:
-            for elem in party.iter():
-                if 'href' in elem.attrib:
-                    image = elem.find("img")
-                    if (image != None):
-                        print image.attrib['title']
-            print '========================'
 
 """
 This is the reduce part of the map reduce.
