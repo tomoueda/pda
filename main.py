@@ -15,12 +15,32 @@ associated_parties = {}
 non_decimal = re.compile(r'[^\d.]+')
 
 def main():
-    construct_grand_party_dict()
-    print 'finished constructing grand party dictionary'
+    dungeon_urls = get_dungeon_urls()
+    print 'please enter a monster number'
     for line in fileinput.input():
         line = non_decimal.sub('', line)
         monster_num = int(line)
-        construct_associated(monster_num)
+        find_associations(dungeon_urls, monster_num)
+
+def find_associations(dungeon_urls, monster_num):
+    for url in dungeon_urls:
+        str_url = domain + url.attrib["href"]
+        response = urllib2.urlopen(str_url)
+        droot = etree.parse(response, etree.HTMLParser())
+        different_difficulties = droot.findall("//td[@class=\"title nowrap\"]/a")
+        parties = root.findall("//td[@class=\"pt\"]")
+        grand_parties[url.text] = parties
+        assoc_parties = get_assoc(monster_num, parties)
+        if assoc_parties:
+            print 
+            for party in associated_parties
+        for durl in different_difficulties:
+            request =  domain + 'en/' + durl.attrib["href"]
+            response = urllib2.urlopen(request)
+            root_in = etree.parse(response, etree.HTMLParser())
+            parties = root_in.findall("//td[@class=\"pt\"]")
+            grand_parties[durl.text] = parties
+
 
 """
 This function creates dictionary where the key
@@ -63,25 +83,11 @@ def get_assoc(monster_num, parties):
 This function creates a large dictionary of dungeons and parties to
 conquer that dungeon.
 """
-def construct_grand_party_dict():
+def get_dungeon_urls():
     response = urllib2.urlopen(start_domain)
     root = etree.parse(response, etree.HTMLParser())
     dungeon_urls = root.findall("//td[@class=\"dungeonname\"]/a")
-    for url in dungeon_urls:
-        print url.text
-        str_url = domain + url.attrib["href"]
-        response = urllib2.urlopen(str_url)
-        droot = etree.parse(response, etree.HTMLParser())
-        different_difficulties = droot.findall("//td[@class=\"title nowrap\"]/a")
-        for durl in different_difficulties:
-            print durl.text
-            request =  domain + 'en/' + durl.attrib["href"]
-            response = urllib2.urlopen(request)
-            root_in = etree.parse(response, etree.HTMLParser())
-            parties = root_in.findall("//td[@class=\"pt\"]")
-            grand_parties[durl.text] = parties
-        parties = root.findall("//td[@class=\"pt\"]")
-        grand_parties[url.text] = parties
+    return dungeon_urls
 
 if __name__ == "__main__":
     main()
