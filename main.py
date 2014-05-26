@@ -26,20 +26,31 @@ def find_associations(dungeon_urls, monster_num):
     for url in dungeon_urls:
         str_url = domain + url.attrib["href"]
         response = urllib2.urlopen(str_url)
-        droot = etree.parse(response, etree.HTMLParser())
-        different_difficulties = droot.findall("//td[@class=\"title nowrap\"]/a")
-        parties = root.findall("//td[@class=\"pt\"]")
-        grand_parties[url.text] = parties
-        assoc_parties = get_assoc(monster_num, parties)
-        if assoc_parties:
-            print 
-            for party in associated_parties
+        root = etree.parse(response, etree.HTMLParser())
+        different_difficulties = root.findall("//td[@class=\"title nowrap\"]/a")
+        print_associations(root, url, monster_num)
         for durl in different_difficulties:
             request =  domain + 'en/' + durl.attrib["href"]
             response = urllib2.urlopen(request)
             root_in = etree.parse(response, etree.HTMLParser())
-            parties = root_in.findall("//td[@class=\"pt\"]")
-            grand_parties[durl.text] = parties
+            # parties = root_in.findall("//td[@class=\"pt\"]")
+            # grand_parties[durl.text] = parties
+            print_associations(root_in, durl, monster_num)
+
+def print_associations(root, url, monster_num):
+    parties = root.findall("//td[@class=\"pt\"]")
+    grand_parties[url.text] = parties
+    assoc_parties = get_assoc(monster_num, parties)
+    if assoc_parties:
+        print '========================================='
+        print url.text
+        for party in assoc_parties:
+            for elem in party.iter():
+                if 'href' in elem.attrib:
+                    image = elem.find("img")
+                    if (image != None):
+                        print image.attrib['title']
+            print '======================'
 
 
 """
