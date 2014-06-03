@@ -67,6 +67,22 @@ class MonsterData:
                    'sub:' + str(self.sub) + '\n' +
                    'appearances:' + str(self.appearance) + '\n')
 
+class PartyData:
+    def __init__(self, party_list, dungeon, stone):
+        self.stone = stone
+        self.dungeon = dungeon
+        self.leader = party_list[0]
+        self.subs = party_list[1:len(party_list) - 1]
+        self.friend = party_list[len(party_list)]
+
+
+class MonsterDataEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, MonsterData):
+            return {obj.monster_num:{'synergy':obj.synergy, 'dungeons':obj.dungeons, 'dungeon_ratios':obj.dungeon_ratio, \
+                    'leader':obj.leader, 'friend':obj.friend, 'sub':obj.sub, 'appearance':obj.appearance}}
+        return json.JSONEncoder.default(self, obj)
+
 def main():
     dungeon_urls = get_dungeon_urls()
     print 'please enter a monster number'
@@ -75,8 +91,14 @@ def main():
         monster_num = int(line)
         monster = MonsterData(monster_num)
         find_associations(dungeon_urls, monster)
-        print monster
-
+        serialize(monster)
+"""
+Serialize monsters in to a json file.
+"""
+def serialize(monster):
+    data = json.dumps(monster, cls=MonsterDataEncoder)
+    with open(str(monster.monster_num) + '.json', 'w') as outfile:
+        json.dump(data, outfile)
 
 """
 Given a list of dungeon urls and a monster number
@@ -93,8 +115,6 @@ def find_associations(dungeon_urls, monster):
             request =  domain + 'en/' + durl.attrib["href"]
             response = urllib2.urlopen(request)
             root_in = etree.parse(response, etree.HTMLParser())
-            # parties = root_in.findall("//td[@class=\"pt\"]")
-            # grand_parties[durl.text] = parties
             print_associations(root_in, durl, monster)
 
 """
@@ -119,9 +139,10 @@ def print_associations(root, url, monster):
                 if 'href' in elem.attrib:
                     image = elem.find("img")
                     if (image != None):
-                        print image.attrib['title']
-                        idnum = int(non_decimal.sub('',image.attrib['title']))
-                        update_monster_info(placement, idnum, monster)
+                        title = image.attrib['title']
+                        print title
+                        idnum = int(non_decimal.sub('',title))
+                        update_monster_info(placement, idnum, title, monster)
                         placement += 1
             print '======================'
         monster.dungeon_ratio[url.text] = float(float(dungeon_counter) / float(len(parties)))
@@ -131,7 +152,7 @@ updates the monster info according to the placement of
 the monster in the team and other monsters that are
 teamed up with this monster.
 """
-def update_monster_info(placement, idnum, monster):
+def update_monster_info(placement, idnum, title, monster):
     if idnum == monster.monster_num:
         monster.add_one()
         if placement == 0:
@@ -141,8 +162,7 @@ def update_monster_info(placement, idnum, monster):
         else:
             monster.add_one_sub()
     else:
-        monster.add_one_teammate(idnum)
-
+        monster.add_one_teammate(title)
 
 """
 This is the reduce part of the map reduce.
@@ -161,7 +181,6 @@ def get_assoc(monster_num, parties):
                     assoc_list.append(party)
                     break
     return assoc_list
-
 
 """
 This function creates a large dictionary of dungeons and parties to
