@@ -3,8 +3,8 @@ import fileinput
 import re
 import json
 import operator
-from collections import Counter
 from lxml import etree
+from pdaclasses import *
 
 #this corresponds to the main site we are scraping data off of.
 #change if this link ever breaks.
@@ -14,103 +14,14 @@ domain = 'http://www.puzzledragonx.com/'
 start_domain = 'http://www.puzzledragonx.com/?dir=1'
 grand_parties = {}
 associated_parties = {}
-bank = MonsterBank()
+mainbank = MonsterBank()
 non_decimal = re.compile(r'[^\d]+')
 
-class MonsterBank:
-    def __init__(self):
-        self.bank = {}
-
-class MonsterBankEncoder:
-    def default(self, obj):
-        if isinstance(obj, MonsterBank):
-            serializable = {}
-            for key, value in obj.bank.items():
-                serializable[key] = value.get_jsonable()
-            return serializable
-        return json.JSONEncoder.default(self, obj)
-
-
-class MonsterData:
-    """
-    The constructor of the monster data,
-    takes in monster number.
-    """
-    def __init__(self, monster_num):
-        self.monster_num = monster_num
-        self.synergy = Counter()
-        self.dungeons = Counter()
-        self.dungeon_ratio = {}
-        self.partydata = {}
-        self.leader = 0
-        self.friend = 0
-        self.sub = 0
-        self.appearance = 0
-
-    def add_one_leader(self):
-        self.leader += 1
-
-    def add_one_friend(self):
-        self.friend += 1
-
-    def add_one_sub(self):
-        self.sub += 1
-
-    def add_one(self):
-        self.appearance += 1
-
-    def add_one_teammate(self, monster_id):
-        self.synergy[monster_id] += 1
-
-    def add_one_dungeon(self, dungeon):
-        self.dungeons[dungeon] += 1
-
-    def get_topx_teammate(self, x):
-        return self.synergy.most_common(x)
-
-    def get_topx_dungeons(self, x):
-        return self.dungeons.most_common(x)
-
-    def update_party_data(self, dungeon, party):
-        if self.partydata[dungeon]:
-            self.partydata[dungeon].append(party)
-        else:
-            self.partydata[dungeon] = [party,]
-
-    def __str__(self):
-        best_dungeon = max(self.dungeon_ratio.iteritems(), key=operator.itemgetter(1))[0]
-        return str('monster id:' + str(self.monster_num) + '\n' +
-                   'top ten monster friends: ' + str(self.synergy.most_common(10)) + '\n' + 
-                   'top ten dungeons: ' + str(self.dungeons.most_common(10)) + '\n' +
-                   'best dungeon ratio: ' + str(best_dungeon) + \
-                   ' with ratio:' + str(self.dungeon_ratio[best_dungeon]) + '\n' + 
-                   'leader:' + str(self.leader) + '\n' + 
-                   'friend:' + str(self.friend) + '\n' +
-                   'sub:' + str(self.sub) + '\n' +
-                   'appearances:' + str(self.appearance) + '\n')
-
-    def get_jsonable(self):
-        return {'id':self.monster_num, 'synergy':self.synergy, 'dungeons':self.dungeons, 'dungeon_ratios':self.dungeon_ratio, \
-                    'leader':self.leader, 'friend':self.friend, 'sub':self.sub, 'appearance':self.appearance, 'dungeon_parties':self.partydata}
-
-
-class PartyData:
-    def __init__(self, party_list):
-        self.leader = party_list[0]
-        self.subs = party_list[1:len(party_list) - 1]
-        self.friend = party_list[len(party_list)]
-
-
-class MonsterDataEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, MonsterData):
-            return {obj.monster_num:{'synergy':obj.synergy, 'dungeons':obj.dungeons, 'dungeon_ratios':obj.dungeon_ratio, \
-                    'leader':obj.leader, 'friend':obj.friend, 'sub':obj.sub, 'appearance':obj.appearance, 'dungeon_parties':obj.partydata}}
-        return json.JSONEncoder.default(self, obj)
 
 def main():
     dungeon_urls = get_dungeon_urls()
     construct_bank(dungeon_urls)
+    serialize_bank()
     # print 'please enter a monster number'
     # for line in fileinput.input():
     #     line = non_decimal.sub('', line)
@@ -120,23 +31,29 @@ def main():
     #     print monster
     #     serialize(monster)
 
+def serialize_bank():
+    data = json.dumps(mainbank, cls=MonsterBankEncoder)
+    with open('maindata.json', 'w') as outfile:
+        json.dump(data, outfile)
+
 
 """
 Create the monster bank dictionary.
 """
 def construct_bank(dungeon_urls):
-    for url in dungeon_urls:
-        print float(non_decimal.sub('', url.attrib["href"])) / len(dungeon_urls) 'progress'
-        str_url = domain + url.attrib["href"]
-        response = urllib2.urlopen(str_url)
-        root = etree.parse(response, etree.HTMLParser())
-        different_difficulties = root.findall("//td[@class=\"title nowrap\"]/a")
-        update_bank(root, url)
-        for durl in different_difficulties:
-            request =  domain + 'en/' + durl.attrib["href"]
-            response = urllib2.urlopen(request)
-            root_in = etree.parse(response, etree.HTMLParser())
-            update_bank(root_in, durl)
+    # for url in dungeon_urls:
+    #     print float(non_decimal.sub('', url.attrib["href"])) / len(dungeon_urls) 'progress'
+    url = dungeon_urls[0]
+    str_url = domain + url.attrib["href"]
+    response = urllib2.urlopen(str_url)
+    root = etree.parse(response, etree.HTMLParser())
+    different_difficulties = root.findall("//td[@class=\"title nowrap\"]/a")
+    update_bank(root, url)
+    for durl in different_difficulties:
+        request =  domain + 'en/' + durl.attrib["href"]
+        response = urllib2.urlopen(request)
+        root_in = etree.parse(response, etree.HTMLParser())
+        update_bank(root_in, durl)
 
 """
 Serialize monsters in to a json file.
@@ -182,7 +99,7 @@ def update_specific_monsters(dungeon, members):
     placement = 0
     for member in members:
         idnum = int(non_decimal.sub('', member))
-        if ~mainbank.bank[idnum]:
+        if idnum not in mainbank.bank:
             mainbank.bank[idnum] = MonsterData(idnum)
         monster = mainbank.bank[idnum]
         monster.update_party_data(dungeon, members)
@@ -190,17 +107,18 @@ def update_specific_monsters(dungeon, members):
         #check to see if leader/friend/sub?
         if placement == 0:
             monster.add_one_leader()
-            monster.add_one
+            monster.add_one()
         elif placement == len(members) - 1:
-            monster.add_one_friend
+            monster.add_one_friend()
         else:
-            monster.add_one_sub
-            monster.add_one
+            monster.add_one_sub()
+            monster.add_one()
         #iterate other members to see association
         others_placement = 0
         for omember in members:
             if placement != others_placement or placement != len(members) - 1:
                 monster.add_one_teammate(omember)
+        placement += 1
 
 """
 Given a root html, the url and the monster number
@@ -230,7 +148,6 @@ def print_associations(root, url, monster):
                         update_monster_info(placement, idnum, title, monster)
                         placement += 1
             print '======================'
-        monster.dungeon_ratio[url.text] = float(float(dungeon_counter) / float(len(parties)))
 
 """
 updates the monster info according to the placement of 
