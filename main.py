@@ -41,19 +41,18 @@ def serialize_bank():
 Create the monster bank dictionary.
 """
 def construct_bank(dungeon_urls):
-    # for url in dungeon_urls:
-    #     print float(non_decimal.sub('', url.attrib["href"])) / len(dungeon_urls) 'progress'
-    url = dungeon_urls[0]
-    str_url = domain + url.attrib["href"]
-    response = urllib2.urlopen(str_url)
-    root = etree.parse(response, etree.HTMLParser())
-    different_difficulties = root.findall("//td[@class=\"title nowrap\"]/a")
-    update_bank(root, url)
-    for durl in different_difficulties:
-        request =  domain + 'en/' + durl.attrib["href"]
-        response = urllib2.urlopen(request)
-        root_in = etree.parse(response, etree.HTMLParser())
-        update_bank(root_in, durl)
+    for url in dungeon_urls:
+        print float(non_decimal.sub('', url.attrib["href"])) / len(dungeon_urls) 'progress'
+        str_url = domain + url.attrib["href"]
+        response = urllib2.urlopen(str_url)
+        root = etree.parse(response, etree.HTMLParser())
+        different_difficulties = root.findall("//td[@class=\"title nowrap\"]/a")
+        update_bank(root, url)
+        for durl in different_difficulties:
+            request =  domain + 'en/' + durl.attrib["href"]
+            response = urllib2.urlopen(request)
+            root_in = etree.parse(response, etree.HTMLParser())
+            update_bank(root_in, durl)
 
 """
 Serialize monsters in to a json file.
