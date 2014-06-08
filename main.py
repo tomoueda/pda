@@ -35,14 +35,17 @@ def serialize_bank():
     data = json.dumps(mainbank, cls=MonsterBankEncoder)
     with open('maindata.json', 'w') as outfile:
         json.dump(data, outfile)
+    for key, monster in mainbank.bank.items():
+        serialize(monster)
 
 
 """
 Create the monster bank dictionary.
 """
 def construct_bank(dungeon_urls):
+    counter = 1
     for url in dungeon_urls:
-        print float(non_decimal.sub('', url.attrib["href"])) / len(dungeon_urls) 'progress'
+        print str(float(counter) / len(dungeon_urls)) , 'progress'
         str_url = domain + url.attrib["href"]
         response = urllib2.urlopen(str_url)
         root = etree.parse(response, etree.HTMLParser())
@@ -53,13 +56,14 @@ def construct_bank(dungeon_urls):
             response = urllib2.urlopen(request)
             root_in = etree.parse(response, etree.HTMLParser())
             update_bank(root_in, durl)
+        counter += 1
 
 """
 Serialize monsters in to a json file.
 """
 def serialize(monster):
     data = json.dumps(monster, cls=MonsterDataEncoder)
-    with open(str(monster.monster_num) + '.json', 'w') as outfile:
+    with open('monster_data/' + str(monster.monster_num) + '.json', 'w') as outfile:
         json.dump(data, outfile)
 
 """

@@ -82,6 +82,19 @@ class MonsterDataEncoder(json.JSONEncoder):
                     'sub':obj.sub, 'appearance':obj.appearance, 'dungeon_parties':obj.partydata}}
         return json.JSONEncoder.default(self, obj)
 
+def customMonsterDataDecoder(monster_dict):
+    monster = MonsterData(int(monster_dict.keys()[0]))
+    monster_dict = monster_dict[monster_dict.keys()[0]]
+    monster.synergy = Counter(monster_dict['synergy'])
+    monster.dungeons = Counter(monster_dict['dungeons'])
+    monster.leader = monster_dict['leader']
+    monster.friend = monster_dict['friend']
+    monster.sub = monster_dict['sub']
+    monster.appearance = monster_dict['appearance']
+    monster.partydata = monster_dict['dungeon_parties']
+    return monster
+
+
 
 
 
